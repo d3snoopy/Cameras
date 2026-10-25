@@ -17,6 +17,7 @@ Make sure that the following packages are installed on your RPi:
 - gunicorn
 - nginx
 - supervisor
+- ffmpeg
 
 Copy the contents of the src/ folder to your directory structure.
 Make sure that the user:group of the /srv/http folder is www-user
