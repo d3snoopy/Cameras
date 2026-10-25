@@ -119,8 +119,7 @@ class recorder:
     #Try to restart any threads that errored out.
     for k, v in self.threads.items():
       if not v.is_alive():
-        recStatus[k]['status'] = 'Restarting'
-        self.newPut = True
+        statuses.put((k, 'Restarting'))
         t = threading.Thread(target=record_video, args=(cameras[k], ))
         self.threads[k] = t
         t.start()
