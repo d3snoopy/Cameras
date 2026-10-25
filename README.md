@@ -1,9 +1,6 @@
 ﻿# A simple home camera recorder/viewer.
 ![Screenshot of app](./doc/screenshot.png)
 
-TODO: UPDATES BELOW HERE
-
-
 This is a simple camera recording and display implementation using Python/Flask/SQLite. I built this because I wanted to host my own recording for my home security cameras, and felt like the existing open source software that I could find was bigger/heavier than I wanted. I run this on a Raspberry Pi.
 
 ## Installation
@@ -33,3 +30,4 @@ sudo supervisorctl status all
 - In a browser, go to your server's address.
 - The first time you visit, the app will have you create an admin account
 - Click on 'Admin' to configure what cameras you have. Note that this accesses the cameras through URLs, so you need to figure out a fully formed URL for both the video stream and to capture a still.
+- On the Admin page you can also manage more users: "View" users can access the index and videos pages, but only can change their own password on the admin page. "Configure" users can do all viewing plus configure the cameras. Only admins can do the user management.
