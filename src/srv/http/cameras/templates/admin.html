@@ -1,0 +1,179 @@
+{% extends "layout.html" %}
+{% block title %}Admin{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+    {% if config %}
+    <h1>Camera Configuration</h1>
+    <form action="{{ url_for('admin') }}" method="POST">
+    <label for="saveLoc">Recording location: (leave blank for no recording)</label>
+    <input type="text" id="saveLoc" name="saveLoc" value="{{ camConfig.saveLoc }}">
+    <br>
+    <label for="saveTime">Split record files every: (minutes)</label>
+    <input type="number" id="saveTime" name="saveTime" value="{{ camConfig.saveTime }}" min="10" max="1440">
+    <br>
+    <label for="freeTarget">Leave at least this much space free on drive: (GB)</label>
+    <input type="number" id="freeTarget" name="freeTarget" value="{{ camConfig.freeTarget }}" min="1">
+    <br>
+    <label for="numCam">Number of Cameras:</label>
+    <input type="number" id="numCam" name="numCam" value="{{ camConfig.numCam }}" min="1">
+    <div id="CamConfig">
+    </div>
+    <script>
+
+      var camData = [
+      {% for cam in camData %}
+        ["{{ cam.vidLink }}", "{{ cam.imageLink }}", "{{ cam.name }}"]{% if not loop.last %},{% endif %}
+      {% endfor %}
+      ];
+      // 1. Make our create functions for adding elements.
+      function addCamConfig(i){
+        //Adds a single entry set with id number i.
+        //Make sure i is handed as an int.
+        const istr = i.toString();
+        const thisDiv = document.createElement("div");
+        thisDiv.id = "div"+istr;
+        camCont.appendChild(thisDiv);
+
+        //Check if we have seed data for this chain element. If not, add an entry.
+        while (i >= camData.length) {
+          camData.push(["", ""]);
+        }
+
+        //Add text boxes for this camera.
+        const thisHdg = document.createElement("h2");
+        thisHdg.innerHTML = "Camera " + istr;
+        const thisLabel1 = document.createElement("label");
+        thisLabel1.htmlFor = "C-" + istr + "-name";
+        thisLabel1.innerHTML = "Name for this camera:";
+        const thisBox1 = document.createElement("input");
+        thisBox1.type = "text";
+        thisBox1.id = "C-" + istr + "-name";
+        thisBox1.name = "C-" + istr + "-name";
+        thisBox1.value = camData[i-1][2];
+        thisDiv.appendChild(thisHdg);
+        thisDiv.appendChild(thisLabel1);
+        thisDiv.appendChild(thisBox1);
+        const thisBR1 = document.createElement("br");
+        thisDiv.appendChild(thisBR1);
+
+        const thisLabel2 = document.createElement("label");
+        thisLabel2.htmlFor = "C-" + istr + "-vid";
+        thisLabel2.innerHTML = "RSTP video stream URL";
+        const thisBox2 = document.createElement("input");
+        thisBox2.type = "text";
+        thisBox2.id = "C-" + istr + "-vid";
+        thisBox2.name = "C-" + istr + "-vid";
+        thisBox2.value = camData[i-1][0];
+        thisDiv.appendChild(thisLabel2);
+        thisDiv.appendChild(thisBox2);
+        //const thisBR2 = document.createElement("br");
+        //thisDiv.appendChild(thisBR2);
+
+        //const thisLabel3 = document.createElement("label");
+        //thisLabel3.htmlFor = "C-" + istr + "-image";
+        //thisLabel3.innerHTML = "Still Image URL";
+        //const thisBox3 = document.createElement("input");
+        //thisBox3.type = "text";
+        //thisBox3.id = "C-" + istr + "-image";
+        //thisBox3.name = "C-" + istr + "-image";
+        //thisBox3.value = camData[i-1][1];
+        //thisDiv.appendChild(thisLabel3);
+        //thisDiv.appendChild(thisBox3);
+      }
+
+      // 2. Make a destroy function for reducing the number of chain elements.
+      function removeCamConfig(i){
+        const istr = i.toString();
+        document.getElementById("div"+istr).remove();
+      }
+
+      const camCont = document.getElementById("CamConfig");
+      const targetNum = document.getElementById("numCam");
+      var actualNum = parseInt(targetNum.value);
+
+      // 3. Spawn the correct number of chain elements.
+      for (var i = 1; i <= parseInt(actualNum); i++) {
+        addCamConfig(i);
+      }
+
+      // 4. Listen for changes on the number of chain elements.
+      targetNum.addEventListener("change", function() {
+        const target = parseInt(this.value);
+
+        if (target > actualNum) {
+          for (var i = actualNum + 1; i <= target; i++) {
+            addCamConfig(i);
+          }
+        } else {
+          for (var i = target + 1; i <= actualNum; i++) {
+            removeCamConfig(i);
+          }
+        }
+        actualNum = target;
+      });
+    </script>
+    <br>
+    <input type="submit" value="Update">
+    </form>
+    {% endif %}
+    <h1>User Administration</h1>
+    {% if config %}
+    <h2>Change Your Password:</h2>
+    <form action="{{ url_for('admin') }}" method="POST">
+    <label for="curPass">Current Password:</label>
+    <input type="password" id="currPass" name="currPass" minlength="6" required>
+    <br>
+    <label for="newPass1">New Password:</label>
+    <input type="password" id="newPass1" name="newPass1" minlength="6" required>
+    <br>
+    <label for="newPass1">Retype New Password:</label>
+    <input type="password" id="newPass2" name="newPass2" minlength="6" required>
+    <br>
+    <input type="submit" value="Change Password">
+    </form>
+    {% endif %}
+    {% if admin %}
+    <form action="{{ url_for('admin') }}" method="POST">
+    <br><br>
+    <h2>Administer Users</h2>
+    <table>
+        <tr>
+            <th>User Name</th>
+	    <th>Pivilege Level</th>
+	    <th>New Password?</th>
+	    <th>Delete User?</th>
+        </tr>
+	{% for user in userList %}
+	<tr>
+	<td>{{ user.Name }}</td>
+	<td><select name="priv{{ user.Number }}" id="priv{{ user.Number }}">
+	    <option value="1" {% if user.Priv==1 %}selected{% endif %}>View</option>
+	    <option value="2" {% if user.Priv==2 %}selected{% endif %}>Configure</option>
+	    <option value="3" {% if user.Priv==3 %}selected{% endif %}>Admin</option>
+	</select></td>
+	<td><input type="text" placeholder="Type here set a new password" id="pass{{ user.Number }}" name="pass{{ user.Number }}"></td>
+	<td><input type="checkbox" id="delete{{ user.Number }}" name="delete{{ user.Number }}"><label for="delete{{ user.Number }}">Delete User</label></td>
+	</tr>
+	{% endfor %}
+    </table>
+    <br><br>
+    <h2>Create New User</h2>
+    <label for="newUsername">Username</label>
+    <input type="text" id="newUsername" name="newUsername">
+    <br>
+    <label for="newUserPass">Password</label>
+    <input type="text" id="newUserPass" name="newUserPass">
+    <br>
+    <label for="newUserPriv">Privilege level</label>
+    <select name="newUserPriv" id="newUserPriv">
+        <option value="1" selected>View</option>
+        <option value="2">Configure</option>
+        <option value="3">Admin</option>
+    </select>
+    <br>
+    <input type="submit" value="Update">
+    </form>
+    {% endif %}
+{% endblock %}

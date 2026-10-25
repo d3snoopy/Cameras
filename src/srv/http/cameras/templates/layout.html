@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+     {% block head %}
+     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+     <title>{% block title %}{% endblock %} Images</title>
+     {% endblock %}
+  </head>
+  <body>
+    <div class="linkbar" id="linkbar">
+        <ul>
+		<li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('mybrowser') }}">Videos</a></li>
+		<li><a href="{{ url_for('admin') }}">Admin</a></li>
+	</ul>
+    </div>
+
+    <div class="content" id="content">
+       {% block content %}{% endblock %}
+    </div>
+    <div class="footer" id="footer">
+      {% block footer %}
+      <p class="alignleft">
+      {% if recStatus %}
+      Save Location: {{ recStatus.saveLoc }}
+      <br>
+      Free Space: {{ recStatus.freespace }}
+      <br>
+      {% for cam in recStatus.camStatus.values() %}
+        {{ cam.name }}: {{ cam.status }}
+        <br>
+      {% endfor %}
+      {% else %}
+      No recording status available
+      {% endif %}
+      {{ status }}
+      {% with messages = get_flashed_messages() %}
+          {% if messages %}
+      	    {% for message in messages %}
+              {{ message }}
+            {% endfor %}
+          {% endif %}
+       {% endwith %}
+      </p>
+      <p class="alignright">Logged in as: {{ user }} <a href="resetlogin">Logout</a></p>
+      {% endblock %}
+    </div>
+    <script>
+      const foot = document.getElementById("footer");
+      const cont = document.getElementById("content");
+      cont.style.paddingBottom = foot.offsetHeight+"px";
+    </script>
+  </body>
+</html>

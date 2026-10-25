@@ -1,0 +1,33 @@
+{% macro genLink(colNum, sparam, sdir, name) -%}
+{% if colNum == sparam %}
+<a href="{{ request.path + '?sort=' + colNum|string + '&dir=' + (not sdir)|int|string }}">
+{% if sdir %}
+{{ name }} &#8593</a>
+{% else %}
+{{ name }} &#8595</a>
+{% endif %}
+{% else %}
+<a href="{{ request.path + '?sort=' + colNum|string }}">{{ name }}</a>
+{% endif %}
+{%- endmacro %}
+
+{% extends "layout.html" %}
+{% block title %}Index{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+    <h1>{{path_title}}</h1>
+    <br>
+    <table><tr>
+    <th>{{- genLink(1, sparam, sdir, 'Name') }}</th>
+    <th>{{- genLink(2, sparam, sdir, 'Date') }}</th>
+    <th>{{- genLink(3, sparam, sdir, 'Size') }}</th>
+    </tr>
+    {%- for f in file_list %}
+    <tr><td><a href="{{ f[1] }}">{{ f[0] }}</a></td><td>{{ f[2] }}</td><td>{{ f[3] }}</td>
+    </tr>
+    {%- endfor %}
+    </table>
+    <br><br>
+{% endblock %}

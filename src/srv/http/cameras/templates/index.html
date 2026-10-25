@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block title %}Index{% endblock %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+    <h1>Camera Views</h1>
+    {% if images %}{% for i in images %}
+    <h3>{{ i.name }}</h3>
+    <a href="{{ url_for('stream', camID=i.id) }}"><img src="{{ url_for('image', camID=i.id) }}" width=60% height=auto></a>
+    {% endfor %}
+    {% else %}
+    <h3>Configure some cameras on the admin page to get started!</h3>
+    {% endif %}
+{% endblock %}

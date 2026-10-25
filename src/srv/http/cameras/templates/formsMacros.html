@@ -1,0 +1,60 @@
+{% macro numInput(name, value='', label='', step='any', error='', disabled=False) -%}
+{% if label %}<label for="{{ name }}">{{ label }}</label>{% endif %}
+<input type="number" name="{{ name }}" id="{{ name }}" step="{{ step }}" value="{{ value }}"{% if disabled %} disabled{% endif %}>
+{% if error %}<label class="error">{{ error }}</label>{% endif %}
+{%- endmacro %}
+
+{% macro txtInput(name, value='', label='', error='', disabled=False) -%}
+{% if label %}<label for="{{ name }}">{{ label }}</label>{% endif %}
+<input type="text" name="{{ name }}" id="{{ name }}" value="{{ value }}"{% if disabled %} disabled{% endif %}>
+{% if error %}<label class="error">{{ error }}</label>{% endif %}
+{%- endmacro %}
+
+{% macro selInput(name, value='', label='', options={'None':'None'}, error='', disabled=False) -%}
+{% if label %}<label for="{{ name }}">{{ label }}</label>{% endif %}
+<select name="{{ name }}" id="{{ name }}"{% if disabled %} disabled{% endif %}>
+{% for k, v in options.items() %}
+<option value="{{ k }}" {% if k == value %}selected{% endif %}>{{ v }}</option>
+{% endfor %}
+</select>
+{% if error %}<label class="error">{{ error }}</label>{% endif %}
+{%- endmacro %}
+
+{% macro checkBox(name, checked=0, label='', error='', disabled=False) -%}
+<input type="checkbox" name="{{ name }}" id="{{ name }}" value="1"{% if checked %} checked{% endif %}{% if disabled %} disabled{% endif %}>
+{% if label %}<label for="{{ name }}">{{ label }}</label>{% endif %}
+{% if error %}<label class="error">{{ error }}</label>{% endif %}
+{%- endmacro %}
+
+{% macro colorBox(name, value='', label='', error='', disabled=False) -%}
+{% if label %}<label for="{{ name }}">{{ label }}</label>{% endif %}
+<input type="color" name="{{ name }}" id="{{ name }}" value="{{ value }}"{% if disabled %} disabled{% endif %}>
+{% if error %}<label class="error">{{ error }}</label>{% endif %}
+{%- endmacro %}
+
+{% macro hidden(name, value='', error='') -%}
+<input type="hidden" name="{{ name }}" id="{{ name }}" value="{{ value }}">
+{%- endmacro %}
+
+{% macro datetime(name, value=list(), label='', error='', disabled=False, refresh=False) -%}
+<td>{% if label %}{{ label }}{% endif %}</td>
+<td><input type="number" name="{{ name+'_year' }}" id="{{ name+'_year' }}" step="1" value="{{ value[0] }}"{% if disabled or refresh %} disabled{% endif %}></td>
+<td><input type="number" name="{{ name+'_month' }}" id="{{ name+'_month' }}" step="1" value="{{ value[1] }}"{% if disabled or refresh %} disabled{% endif %}></td>
+<td><input type="number" name="{{ name+'_day' }}" id="{{ name+'_day' }}" step="1" value="{{ value[2] }}"{% if disabled %} disabled{% endif %}></td>
+<td><input type="number" name="{{ name+'_hour' }}" id="{{ name+'_hour' }}" step="1" value="{{ value[3] }}"{% if disabled %} disabled{% endif %}></td>
+<td><input type="number" name="{{ name+'_min' }}" id="{{ name+'_min' }}" step="1" value="{{ value[4] }}"{% if disabled %} disabled{% endif %}></td>
+<td><input type="number" name="{{ name+'_sec' }}" id="{{ name+'_sec' }}" step="1" value="{{ value[5] }}"{% if disabled %} disabled{% endif %}></td>
+{%- endmacro %}
+
+{% macro shortTime(name, value=list(), label='', error='', disabled=False, refresh=False) -%}
+{% if label %}{{ label }}{% endif %}
+<input type="number" name="{{ name+'_day' }}" id="{{ name+'_day' }}" step="1" value="{{ value['days'] }}"{% if disabled %} disabled{% endif %}>
+<label for="{{ name+'_day' }}">days</label>
+<input type="number" name="{{ name+'_hour' }}" id="{{ name+'_hour' }}" step="1" value="{{ value['hours'] }}"{% if disabled %} disabled{% endif %}>
+<label for="{{ name+'_hour' }}">hours</label>
+<input type="number" name="{{ name+'_min' }}" id="{{ name+'_min' }}" step="1" value="{{ value['minutes'] }}"{% if disabled %} disabled{% endif %}>
+<label for="{{ name+'_min' }}">minutes</label>
+<input type="number" name="{{ name+'_sec' }}" id="{{ name+'_sec' }}" step="1" value="{{ value['seconds'] }}"{% if disabled %} disabled{% endif %}>
+<label for="{{ name+'_sec' }}">seconds</label>
+{%- endmacro %}
+

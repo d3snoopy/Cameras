@@ -1,0 +1,53 @@
+<!doctype html>
+{% import 'formsMacros.html' as forms %}
+<html>
+  <head>
+     {% block head %}
+     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+     <title>Login</title>
+     {% endblock %}
+  </head>
+  <body>
+    <div class="content">
+       {% block content %}
+         <form method="POST" action="{{ url_for('login') }}">
+         <h2>{{ headStr }}</h2>
+         {% if error %}<p class="error">{{ error }}</p>{% endif %}
+         {{- forms.txtInput('username', '', 'User Name:') -}}
+         <br>
+         <label for="password">Password:</label>
+         <input type="password" name="password" id="password">
+         {% if double %}
+         <br>
+         <label for="password">Repeat Password:</label>
+         <input type="password" name="password2" id="password2">
+         {% endif %}
+         <br>
+         {% if not double %}
+         {{- forms.checkBox('remCheck', 0, 'Remember Me') -}}
+         {% endif %}
+         <br>
+         <input type="submit" value="Submit">
+       {% endblock %}
+    </div>
+    <div class="footer" id="footer">
+      {% block footer %}
+      <p class="alignleft">
+      {% with messages = get_flashed_messages() %}
+          {% if messages %}
+      	    {% for message in messages %}
+              {{ message }}
+            {% endfor %}
+          {% endif %}
+       {% endwith %}
+      </p>
+      {% endblock %}
+    </div>
+    <script>
+      const foot = document.getElementById("footer");
+      const cont = document.getElementById("content");
+      cont.style.paddingBottom = foot.offsetHeight+"px";
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,65 @@
+    userList = None
+    isAdmin = (current_user.authLevel >= 4)
+    isConfig = (current_user.authLevel >= 3)
+    user = current_user.username
+
+    if not isConfig: return render_template('badprivilges.html', username=user)
+
+    if request.method == 'POST' and 'currPass' in request.form and isConfig:
+        #Handle Password Change
+        if camauth.check_password(None, user, request.form['currPass']):
+            #Provided current password is good
+            if request.form['newPass1'] == request.form['newPass2']:
+                status += "Updated your password, "
+                usrLvl = query_db("SELECT * FROM camUser WHERE userName = ?",
+                        (user, ), one=True)['authLevel']
+                camauth.change_user(user,
+                        request.form['newPass1'], usrLvl, False)
+            else:
+                status += "New password fields did not match, "
+        else:
+            status += "Current password provided not correct, "
+
+    users = query_db("SELECT rowid, userName, authLevel FROM camUser WHERE userName != ?",
+            (user, ))
+    #Any more POST stuff after this requires an admin.
+    changeMade = False
+    if request.method == 'POST' and isAdmin and 'newUserPass' in request.form:
+        #Handle New User Req.
+        if request.form['newUserPass']:
+            changeMade = True
+            status += camauth.change_user(request.form['newUsername'],
+                    request.form['newUserPass'],
+                    request.form['newUserPriv'],
+                    True)
+
+        #Need to test for all the table values.
+        for u in users:
+            passStr = 'pass' + str(u['rowid'])
+            if request.form[passStr]:
+                changeMade = True
+                status += camauth.change_user(u['userName'],
+                        request.form[passStr], u['authLevel'], False)
+
+            privLvl = 'priv' + str(u['rowid'])
+            if request.form[privLvl] != str(u['authLevel']):
+                changeMade = True
+                status += camauth.change_user(u['userName'], False, request.form[privLvl], False)
+
+            delStr = 'delete' + str(u['rowid'])
+            if delStr in request.form:
+                changeMade = True
+                modify_db('DELETE FROM camUser WHERE rowid = ?', (u['rowid'], ))
+                status += "Deleted user: " + u['userName'] + ", "
+
+    if isAdmin:
+        if changeMade:
+            users = query_db("SELECT rowid, userName, authLevel FROM camUser WHERE userName != ?",
+            (request.environ.get('REMOTE_USER'), ))
+
+        userList = list()
+        for u in users:
+            userList.append({'Name':u['userName'], 'Number':u['rowid'], 'Priv':u['authLevel']})
+
+    return render_template('admin.html', status=status, userList=userList, admin=isAdmin,
+            user=current_user.username, config=isConfig)

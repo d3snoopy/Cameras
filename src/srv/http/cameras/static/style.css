@@ -1,0 +1,106 @@
+body {
+    font-size: 0.8em;
+    color: #668cff;
+    background-color: #090909;
+    padding: 0;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table, th, td {
+    border: 1px solid #00336d;
+}
+
+a:link {
+    text-decoration: none;
+    font-weight: bold;
+    color: #0077ff;
+}
+
+
+a:visited {
+    text-decoration: none;
+    font-weight: bold;
+    color: #0077ff;
+}
+
+a:hover {
+    text-decoration: underline;
+    font-weight: bold;
+    color: #0077ff;
+}
+
+input[type=number]{
+    width: 60px;
+}
+
+
+/* Page Layout */
+
+.linkbar {
+    width: 100%;
+    height: 40px;
+    margin:0;
+    padding:0;
+    border:0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #000000;
+}
+
+.content {
+    width: 100%;
+    padding: 1.5rem;
+    margin:0;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+li {
+    float: left;
+    padding:0;
+    border-color: #333;
+}
+
+li a {
+    display: block;
+    color: #0077ff;
+    text-align: center;
+    padding: 13px 16px;
+    text-decoration: none;
+}
+
+li a:hover {
+    background-color: #333;
+    text-decoration: none;
+}
+
+.footer {
+    width: 100%;
+    margin:0;
+    padding:0;
+    border:0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    background-color: #000000;
+}
+
+.alignleft {
+    float:left;
+}
+
+.alignright {
+    float:right;
+}
+
+
