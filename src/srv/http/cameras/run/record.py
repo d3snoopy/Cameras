@@ -95,7 +95,7 @@ class recorder:
       return
 
     self.storeLoc = recSettings["saveLoc"]+'/recordings'
-    self.storeSpace = recSettings["freeTarget"]*1073741824 #GB to b
+    self.storeSpace = recSettings["freeTarget"]
     self.recTime = recSettings["saveTime"]
     
     camSettings = query_db("SELECT * FROM camSettings WHERE rowid <= ?", (recSettings['numCam'], ), db=self.db) #The numCam limit prevents orphan configs from being used.
@@ -132,13 +132,15 @@ class recorder:
 
 #Utility functions.
 #Delete files until we reach the perscribed free space.
-def free_space_up_to(free_bytes_required, rootfolder, extension=".mp4"):
+def free_space_up_to(free_GB_required, rootfolder, extension=".mp4"):
   file_list= files_to_delete(rootfolder, extension)
   while file_list:
     statv= os.statvfs(rootfolder)
-    if statv.f_bfree*statv.f_bsize >= free_bytes_required:
+    if statv.f_bavail*statv.f_bsize >= free_GB_required*1024*1024*1000:
       break
-    os.remove(file_list.pop())
+    del_file = file_list.pop()
+    print('Deleting file: ' + del_file)
+    os.remove(del_file)
 
   #Cleanup empty folders
   for root, dirs, files in os.walk(rootfolder):
@@ -178,6 +180,7 @@ def record_video(c):
       "-c:a", "copy",
       '-t', convTime(c['storeDur']),
       filename]
+    print('Starting a recording for: ' + c['name'])
     process = subprocess.Popen(
       command,
       stdout=subprocess.DEVNULL,
@@ -193,6 +196,7 @@ def record_video(c):
       time.sleep(1.0)
 
     if process.returncode != 0:
+      print('Return code: ' + str(process.returncode) + ' for camera: ' + c['name'])
       statuses.put((c['id'], 'Error Recording'))
       return
 
