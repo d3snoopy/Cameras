@@ -84,7 +84,7 @@ class recorder:
         if self.newPut: putStatus(recStatus) #Puts the rec status in /tmp for the website to read and display.
 
       #If we got here, we're doing a restart. Wait for all the threads to finish.
-      for t in threads:
+      for t in self.threads:
         t.join()
 
 
