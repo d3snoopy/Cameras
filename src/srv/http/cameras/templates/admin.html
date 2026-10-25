@@ -68,19 +68,6 @@
         thisBox2.value = camData[i-1][0];
         thisDiv.appendChild(thisLabel2);
         thisDiv.appendChild(thisBox2);
-        //const thisBR2 = document.createElement("br");
-        //thisDiv.appendChild(thisBR2);
-
-        //const thisLabel3 = document.createElement("label");
-        //thisLabel3.htmlFor = "C-" + istr + "-image";
-        //thisLabel3.innerHTML = "Still Image URL";
-        //const thisBox3 = document.createElement("input");
-        //thisBox3.type = "text";
-        //thisBox3.id = "C-" + istr + "-image";
-        //thisBox3.name = "C-" + istr + "-image";
-        //thisBox3.value = camData[i-1][1];
-        //thisDiv.appendChild(thisLabel3);
-        //thisDiv.appendChild(thisBox3);
       }
 
       // 2. Make a destroy function for reducing the number of chain elements.
@@ -119,7 +106,6 @@
     </form>
     {% endif %}
     <h1>User Administration</h1>
-    {% if config %}
     <h2>Change Your Password:</h2>
     <form action="{{ url_for('admin') }}" method="POST">
     <label for="curPass">Current Password:</label>
@@ -133,7 +119,6 @@
     <br>
     <input type="submit" value="Change Password">
     </form>
-    {% endif %}
     {% if admin %}
     <form action="{{ url_for('admin') }}" method="POST">
     <br><br>

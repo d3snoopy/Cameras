@@ -3,7 +3,8 @@
   <head>
      {% block head %}
      <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-     <title>{% block title %}{% endblock %} Images</title>
+     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+     <title>{% block title %}{% endblock %}</title>
      {% endblock %}
   </head>
   <body>
@@ -33,6 +34,9 @@
       {% else %}
       No recording status available
       {% endif %}
+      </p>
+      <p class="alignright">Logged in as: {{ user }} <a href="resetlogin">Logout</a>
+      <br><span class="flash">
       {{ status }}
       {% with messages = get_flashed_messages() %}
           {% if messages %}
@@ -41,8 +45,7 @@
             {% endfor %}
           {% endif %}
        {% endwith %}
-      </p>
-      <p class="alignright">Logged in as: {{ user }} <a href="resetlogin">Logout</a></p>
+      </span></p>
       {% endblock %}
     </div>
     <script>

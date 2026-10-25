@@ -129,7 +129,7 @@ def logout():
 @app.route("/")
 @login_required
 def index():
-    if current_user.authLevel < 1: return render_template('badprivilges.html')
+    if current_user.authLevel < 1: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
     import cameras.model.index
     # Process our Index data.
     images = cameras.model.index.doIndex()
@@ -141,18 +141,18 @@ def index():
 @app.route('/admin', methods=['GET', 'POST'])
 @fresh_login_required
 def admin():
-    if current_user.authLevel < 2: return render_template('badprivilges.html')
+    if current_user.authLevel < 1: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
 
     import cameras.model.admin
     errors = dict()
     # Process the model.
     isAdmin = (current_user.authLevel > 2)
-    isConfig = True
+    isConfig = (current_user.authLevel > 1)
     status = ''
     if request.method == 'POST':
-      status = cameras.model.admin.processForm(isAdmin, current_user.username)
+      status = cameras.model.admin.processForm(isAdmin, isConfig, current_user.username)
 
-    userList, camConfig, camData, status = cameras.model.admin.createForm(isAdmin, status, current_user.username)
+    userList, camConfig, camData = cameras.model.admin.createForm(isAdmin, isConfig, current_user.username)
 
     return render_template('admin.html', status=status, userList=userList, admin=isAdmin, config=isConfig, camConfig=camConfig, camData=camData, user=current_user.username, recStatus=getStatus())
 
@@ -160,7 +160,7 @@ def admin():
 @app.route('/stream/<camID>')
 @login_required
 def stream(camID):
-    if current_user.authLevel < 1: return render_template('badprivilges.html')
+    if current_user.authLevel < 1: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
 
     from cameras.run.record import generate_frames
     streamURL = query_db("SELECT vidLink FROM camSettings WHERE rowid = ?", (camID, ),one=True)['vidLink']
@@ -172,7 +172,7 @@ def stream(camID):
 @app.route('/image/<camID>')
 @login_required
 def image(camID):
-  if current_user.authLevel < 1: return render_template('badprivilges.html')
+  if current_user.authLevel < 1: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
 
   #pic = requests.get(query_db("SELECT imageLink FROM camSettings WHERE rowid = ?", (camID, ), one=True)['imageLink'])
   from cameras.run.record import generate_image
@@ -185,7 +185,7 @@ def image(camID):
 @app.route('/videos/<path:folders>')
 @app.route('/videos/')
 def mybrowser(folders=''):
-    if current_user.authLevel < 1: return render_template('badprivilges.html')
+    if current_user.authLevel < 1: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
     #if not current_user.is_authenticated: return redirect(url_for('login'))
     environ = request.environ
     path = environ.get('PATH_INFO')
@@ -236,7 +236,7 @@ def mybrowser(folders=''):
 @app.route('/reboot', methods=['POST'])
 @login_required
 def reboot():
-  if current_user.authLevel < 3: return render_template('badprivilges.html')
+  if current_user.authLevel < 3: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
 
   with open('/tmp/reboot', 'w') as f:
     f.write('reboot')
@@ -246,7 +246,7 @@ def reboot():
 @app.route('/shutdown', methods=['POST'])
 @login_required
 def shutdown():
-  if current_user.authLevel < 3: return render_template('badprivilges.html')
+  if current_user.authLevel < 3: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
 
   with open('/tmp/shutdown', 'w') as f:
     f.write('shutdown')

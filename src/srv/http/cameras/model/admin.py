@@ -49,19 +49,20 @@ def change_user(userName, newPassword, userLevel, new):
           return retStr
 
 
-def processForm(isAdmin, username):
+def processForm(isAdmin, isConfig, username):
   with app.app_context():
     status = ''
-    if 'saveLoc' in request.form.keys():
+    if 'saveLoc' in request.form.keys() and isConfig:
       #We're updating the camera stuff.
       modify_db('INSERT OR REPLACE INTO recSettings (rowid, saveLoc, saveTime, freeTarget, numCam, lastEdit) VALUES (?, ?, ?, ?, ?, ?)', (1, request.form['saveLoc'], request.form['saveTime'], request.form['freeTarget'], request.form['numCam'], int(datetime.now(UTC).timestamp())))
 
       for i in range(1, int(request.form['numCam'])+1):
         modify_db('INSERT OR REPLACE INTO camSettings (rowid, name, vidLink) VALUES (?, ?, ?)', (i, request.form['C-'+str(i)+'-name'], request.form['C-'+str(i)+'-vid']))
 
+      status += "Updated Camera Settings, "
       return status
 
-    if 'Change' in request.form.keys():
+    if 'currPass' in request.form.keys():
       #Handle self password change.
       if check_password(None, username, request.form['currPass']):
         if request.form['newPass1'] == request.form['newPass2']:
@@ -104,20 +105,29 @@ def processForm(isAdmin, username):
     return status
 
 
-def createForm(isAdmin, status, username):
+def createForm(isAdmin, isConfig, username):
   with app.app_context():
-    if not isAdmin: return None, status
-    userList = list()
-    users = query_db("SELECT rowid, userName, authLevel FROM camUser WHERE userName != ?",
+    if isAdmin:
+      userList = list()
+      users = query_db("SELECT rowid, userName, authLevel FROM camUser WHERE userName != ?",
             (username, ))
 
-    for u in users:
-      userList.append({'Name':u['userName'], 'Number':u['rowid'], 'Priv':u['authLevel']})
+      for u in users:
+        userList.append({'Name':u['userName'], 'Number':u['rowid'], 'Priv':u['authLevel']})
 
-    camConfig = query_db("SELECT * FROM recSettings", one=True)
-    camData = query_db("SELECT * FROM camSettings")
+    else:
+      userList = None
 
-    if not camConfig:
-      camConfig = {'numCam':1, 'freeTarget':10, 'saveTime':60}
+    if isConfig:
+      camConfig = query_db("SELECT * FROM recSettings", one=True)
+      camData = query_db("SELECT * FROM camSettings")
 
-    return userList, camConfig, camData, status
+
+      if not camConfig:
+        camConfig = {'numCam':1, 'freeTarget':10, 'saveTime':60}
+
+    else:
+      camConfig = None
+      camData = None
+
+    return userList, camConfig, camData

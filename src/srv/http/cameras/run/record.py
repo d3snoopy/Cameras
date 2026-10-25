@@ -120,7 +120,7 @@ class recorder:
     for k, v in self.threads.items():
       if not v.is_alive():
         statuses.put((k, 'Restarting'))
-        t = threading.Thread(target=record_video, args=(cameras[k], ))
+        t = threading.Thread(target=record_video, args=(self.cameras[k], ))
         self.threads[k] = t
         t.start()
 
