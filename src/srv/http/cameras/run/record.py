@@ -125,7 +125,7 @@ class recorder:
         t.start()
 
     #Set the next time to do this housekeeping.
-    self.nextHousekeeping = datetime.now() + timedelta(minutes=self.recTime) #Housekeeping once per recTime
+    self.nextHousekeeping = datetime.now() + timedelta(minutes=self.recTime/10) #Housekeeping ten times per recTime. This is a balance between constant housekeeping and big gaps due to interruptions.
     return
 
 
@@ -187,12 +187,14 @@ def record_video(c):
     )
     statuses.put((c['id'], 'Recording'))
 
-    while not process.poll():
+    while process.returncode is None:
+      process.poll()
       if stopEvent.is_set():
         process.terminate()
         statuses.put((c['id'], 'Terminated'))
         return
-      time.sleep(1.0)
+
+      time.sleep(1)
 
     if process.returncode != 0:
       print('Return code: ' + str(process.returncode) + ' for camera: ' + c['name'])
@@ -200,6 +202,7 @@ def record_video(c):
       return
 
     statuses.put((c['id'], 'Finished'))
+    time.sleep(10)
 
 
 
