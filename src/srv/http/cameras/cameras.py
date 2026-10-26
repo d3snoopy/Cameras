@@ -129,7 +129,6 @@ def logout():
 @app.route("/")
 @login_required
 def index():
-    if current_user.authLevel < 1: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
     import cameras.model.index
     # Process our Index data.
     images = cameras.model.index.doIndex()
@@ -141,8 +140,6 @@ def index():
 @app.route('/admin', methods=['GET', 'POST'])
 @fresh_login_required
 def admin():
-    if current_user.authLevel < 1: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
-
     import cameras.model.admin
     errors = dict()
     # Process the model.
@@ -160,8 +157,6 @@ def admin():
 @app.route('/stream/<camID>')
 @login_required
 def stream(camID):
-    if current_user.authLevel < 1: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
-
     from cameras.run.record import generate_frames
     streamURL = query_db("SELECT vidLink FROM camSettings WHERE rowid = ?", (camID, ),one=True)['vidLink']
 
@@ -172,9 +167,6 @@ def stream(camID):
 @app.route('/image/<camID>')
 @login_required
 def image(camID):
-  if current_user.authLevel < 1: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
-
-  #pic = requests.get(query_db("SELECT imageLink FROM camSettings WHERE rowid = ?", (camID, ), one=True)['imageLink'])
   from cameras.run.record import generate_image
   pic = generate_image(query_db("SELECT vidLink FROM camSettings WHERE rowid = ?", (camID, ),one=True)['vidLink'])
 
@@ -185,8 +177,6 @@ def image(camID):
 @app.route('/videos/<path:folders>')
 @app.route('/videos/')
 def mybrowser(folders=''):
-    if current_user.authLevel < 1: return render_template('badprivilges.html', user=current_user.username, recStatus=getStatus())
-    #if not current_user.is_authenticated: return redirect(url_for('login'))
     environ = request.environ
     path = environ.get('PATH_INFO')
     #print(path)
@@ -242,6 +232,7 @@ def reboot():
     f.write('reboot')
 
   return 'Rebooting Server'
+
 
 @app.route('/shutdown', methods=['POST'])
 @login_required

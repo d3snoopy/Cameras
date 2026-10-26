@@ -56,7 +56,7 @@ class recorder:
 
       self.threads = dict()
       #Do the recording stuff.
-      for c in self.cameras:
+      for c in self.cameras.values():
         recStatus[c['id']] = {'name':c['name'], 'status':'Starting'}
         t = threading.Thread(target=record_video, args=(c, ))
         self.threads[c['id']]=t
@@ -99,10 +99,10 @@ class recorder:
     self.recTime = recSettings["saveTime"]
     
     camSettings = query_db("SELECT * FROM camSettings WHERE rowid <= ?", (recSettings['numCam'], ), db=self.db) #The numCam limit prevents orphan configs from being used.
-    self.cameras = list()
+    self.cameras = dict()
     for c in camSettings:
       name = re.sub(r'\W+', '', c["name"])
-      self.cameras.append({'name':str(c["rowid"])+"-"+name, 'rtspUrl':c["vidLink"], 'storeLoc':self.storeLoc, 'storeDur':self.recTime, 'extension':self.extension, 'id':c["rowid"]})
+      self.cameras[c["rowid"]] = {'name':str(c["rowid"])+"-"+name, 'rtspUrl':c["vidLink"], 'storeLoc':self.storeLoc, 'storeDur':self.recTime, 'extension':self.extension, 'id':c["rowid"]}
 
     self.lastEdit = recSettings["lastEdit"]
 
