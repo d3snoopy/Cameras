@@ -17,7 +17,15 @@ Make sure that the following packages are installed on your RPi:
 - ffmpeg
 
 Copy the contents of the src/ folder to your directory structure.
-Make sure that the user:group of the /srv/http folder is www-user
+
+Create the user "camuser":
+```bash
+sudo adduser camuser --shell /sbin/nologin
+sudo chown -R camuser:camuser /srv/http
+```
+
+Also, make sure that the user:group of your desired recording location is also camuer:camuser
+
 Restart nginx and supervisor services.
 
 To check on status in terminal:
