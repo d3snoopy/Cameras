@@ -24,7 +24,7 @@ Copy the contents of the src/ folder to your directory structure.
 
 Create the user "camuser":
 ```bash
-sudo adduser camuser --shell /sbin/nologin
+sudo useradd camuser --shell /sbin/nologin
 sudo chown -R camuser:camuser /srv/http
 ```
 
