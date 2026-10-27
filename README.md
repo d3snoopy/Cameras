@@ -24,7 +24,7 @@ sudo adduser camuser --shell /sbin/nologin
 sudo chown -R camuser:camuser /srv/http
 ```
 
-Also, make sure that the user:group of your desired recording location is also camuer:camuser
+Also, make sure that the user:group of your desired recording location is also camuser:camuser
 
 Restart nginx and supervisor services.
 
