@@ -2,8 +2,8 @@ from flask import render_template, Flask, request, redirect, url_for, flash, g, 
 from flask_login import LoginManager, UserMixin, login_required, fresh_login_required, login_user, logout_user, current_user
 from cameras.run.db import query_db, modify_db
 from cameras.run.status import getStatus, sizeof_fmt
+from cameras.run.record import extension, saveFolder
 from os.path import exists
-#import re
 import requests
 
 import os, time
@@ -168,9 +168,9 @@ def stream(camID):
 @login_required
 def image(camID):
   from cameras.run.record import generate_image
-  pic = generate_image(query_db("SELECT vidLink FROM camSettings WHERE rowid = ?", (camID, ),one=True)['vidLink'])
+  streamURL = query_db("SELECT vidLink FROM camSettings WHERE rowid = ?", (camID, ),one=True)['vidLink']
 
-  return Response(pic,mimetype="image/jpeg")
+  return Response(generate_image(streamURL), mimetype="image/jpeg")
 
 
 @login_required
@@ -181,13 +181,36 @@ def mybrowser(folders=''):
     path = environ.get('PATH_INFO')
     #print(path)
     path = path.split('videos')[1]
-    #print(path)
+    #Verify that the path conforms to our pattern.
+    #The pattern is: /NNNN/NN/NN/N-CameraName-NN.mp4 (mp4 extension controlled in run/record.py and laoded here above.)
+    pathGood = True
+    for p in path.split('/'):
+      #Ignore empty strings.
+      if not p:
+        continue
+
+      if p.endswith(extension):
+        #This is a filename. Make sure it fits our convention.
+        from cameras.model.admin import fixName
+        for i, f in enumerate(p.split('-')):
+          if i == 0 and not f.isnumeric(): pathGood = False
+          if i == 1 and f != fixName(f): pathGood = False
+          if i == 2 and not f.split('.')[0].isnumeric(): pathGood = False
+          #Don't need to check the extension because the path has to end with the correct extension to get to this logic.
+      else:
+        #This is a directory. Needs to be purely numeric.
+        if not p.isnumeric(): pathGood = False
+
+    if not pathGood:
+      return render_template('videos.html', path_title='Bad Path', user=current_user.username, recStatus=getStatus())
+
     saveLoc = query_db('SELECT saveLoc FROM recSettings WHERE rowid = 1', one=True)['saveLoc']
-    os_path = saveLoc+'/recordings'+path.rstrip('/')
+    os_path = saveLoc+saveFolder+path.rstrip('/')
+
+    if not exists(os_path):
+      return render_template('videos.html', path_title='Bad Path', user=current_user.username, recStatus=getStatus())
     if path.endswith('/'):
-        path_title = os_path.split('recordings')[1]+'/'
-        if not exists(os_path):
-          return render_template('videos.html', path_title='No Recordings Available', user=current_user.username, recStatus=getStatus())
+        path_title = os_path.split(saveFolder)[1]+'/'
         files = os.listdir(os_path)
         file_list = list()
         for file in files:

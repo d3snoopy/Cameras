@@ -14,7 +14,10 @@ def getStatus():
 
   if saveLoc:
     status['saveLoc'] = saveLoc
-    status['freespace'] = sizeof_fmt(statvfs(saveLoc).f_frsize * statvfs(saveLoc).f_bavail)
+    if exists(saveLoc):
+      status['freespace'] = sizeof_fmt(statvfs(saveLoc).f_frsize * statvfs(saveLoc).f_bavail)
+    else:
+      status['freespace'] = 'Cannot determine free space'
 
   if exists("/tmp/camStatus"):
     with open("/tmp/camStatus","r") as f: status['camStatus'] = json.load(f)

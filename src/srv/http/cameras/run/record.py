@@ -1,9 +1,11 @@
 from cameras.run.db import query_db, get_db
 from cameras.run.status import putStatus
-import os, time, subprocess, re, threading, queue
+import os, time, subprocess, threading, queue
 from datetime import datetime, timedelta
 stopEvent = threading.Event()
 statuses = queue.Queue()
+extension = ".mp4"
+saveFolder = "/recordings"
 
 #TODO: Test with Supervisor to see if a TERM from supervisor stops things relatively cleanly or if it gets all crazy.
 # If it doesn't close cleanly, then add some code to try to gracefully stop on SIGTERM or SIGINT
@@ -33,26 +35,27 @@ if __name__ == '__main__':
 class recorder:
   def __init__(self):
     self.db = get_db(newdb = True, appContext = False)
-    self.extension = ".mp4"
-    self.readDB()
+    self.extension = extension
+    self.storeLoc = None
+    self.storeSpace = None
+    self.lastEdit = 0
     self.threads = dict()
+    self.housekeeper()
+    self.nextHousekeeping = datetime.now()
     return
 
   def start(self):
     while True: #This restarts everything if we got updates and broke out of the housekeeping loop below.
-      if not self.storeLoc:
+      if not self.testStore():
         #The storage location is blank, which indicates no recording to be done.
-        recStatus = {1:{'name':'All Cameras', 'status':'No recording configured'}}
-        putStatus(recStatus)
         time.sleep(60) #There's a decent chance that we're here because the db isn't configured, so default to checking for an update every 60 seconds.
         self.readDB()
         continue
 
-      self.housekeeper()
       stopEvent.clear()
       recStatus = dict()
 
-      if not os.path.exists(self.storeLoc): os.mkdir(self.storeLoc)
+      if not os.path.exists(self.storeLoc+saveFolder): os.mkdir(self.storeLoc+saveFolder)
 
       self.threads = dict()
       #Do the recording stuff.
@@ -77,48 +80,65 @@ class recorder:
         while not statuses.empty():
           self.newPut = True
           newStatus = statuses.get()
-          recStatus[newStatus[0]]['status'] = newStatus[1]
+          #Need to test for the key to ignore statuses for old, deleted cameras.
+          if newStatus[0] in recStatus.keys(): recStatus[newStatus[0]]['status'] = newStatus[1]
 
         if datetime.now() > self.nextHousekeeping: self.housekeeper()
 
         if self.newPut: putStatus(recStatus) #Puts the rec status in /tmp for the website to read and display.
 
       #If we got here, we're doing a restart. Wait for all the threads to finish.
-      for t in self.threads:
+      for t in self.threads.values():
         t.join()
 
 
   def readDB(self):
     recSettings = query_db("SELECT * FROM recSettings WHERE rowid = 1", db=self.db, one=True)
     if not recSettings: #This means the db isn't populated yet. Doing this will punt up to the no recordings configured loop in the start method.
+      return
+
+    if recSettings["saveLoc"]:
+      self.storeLoc = recSettings["saveLoc"]
+    else:
       self.storeLoc = None
       return
 
-    self.storeLoc = recSettings["saveLoc"]+'/recordings'
     self.storeSpace = recSettings["freeTarget"]
     self.recTime = recSettings["saveTime"]
     
     camSettings = query_db("SELECT * FROM camSettings WHERE rowid <= ?", (recSettings['numCam'], ), db=self.db) #The numCam limit prevents orphan configs from being used.
     self.cameras = dict()
     for c in camSettings:
-      name = re.sub(r'\W+', '', c["name"])
-      self.cameras[c["rowid"]] = {'name':str(c["rowid"])+"-"+name, 'rtspUrl':c["vidLink"], 'storeLoc':self.storeLoc, 'storeDur':self.recTime, 'extension':self.extension, 'id':c["rowid"]}
+      self.cameras[c["rowid"]] = {'name':str(c["rowid"])+"-"+c["name"], 'rtspUrl':c["vidLink"], 'storeLoc':self.storeLoc+saveFolder, 'storeDur':self.recTime, 'extension':self.extension, 'id':c["rowid"]}
 
     self.lastEdit = recSettings["lastEdit"]
 
     return
 
   def housekeeper(self):
-    if query_db("SELECT lastEdit FROM recSettings WHERE rowid = 1", db=self.db, one=True)["lastEdit"]>self.lastEdit:
+    res = query_db("SELECT lastEdit FROM recSettings WHERE rowid = 1", db=self.db, one=True)
+    if not res:
+      recStatus = {1:{'name':'All Cameras', 'status':'No recording configured'}}
+      putStatus(recStatus)
+      return #Our db is fresh and doesn't have needed data.
+
+    if res["lastEdit"]>self.lastEdit:
       self.readDB()
       stopEvent.set()
 
+    if not self.testStore(): return
+
     #Free up space
-    free_space_up_to(self.storeSpace, self.storeLoc, self.extension)
+    if self.storeSpace is not None: free_space_up_to(self.storeSpace, self.storeLoc+saveFolder, self.extension)
+
+    #Create directory for this day. Note: each thread also does this but we can end up in a race condition on the threads, by making it here, we're trying to avoid the race condition.
+    thispath = self.storeLoc + saveFolder + "/" + str(datetime.now().year) + "/" + str(datetime.now().month) + "/" + str(datetime.now().day) + "/"
+    if not os.path.exists(thispath): os.makedirs(thispath)
+
 
     #Try to restart any threads that errored out.
     for k, v in self.threads.items():
-      if not v.is_alive():
+      if not v.is_alive() and k in self.cameras.keys(): #Test for camera still around.
         statuses.put((k, 'Restarting'))
         t = threading.Thread(target=record_video, args=(self.cameras[k], ))
         self.threads[k] = t
@@ -127,6 +147,31 @@ class recorder:
     #Set the next time to do this housekeeping.
     self.nextHousekeeping = datetime.now() + timedelta(minutes=self.recTime/10) #Housekeeping ten times per recTime. This is a balance between constant housekeeping and big gaps due to interruptions.
     return
+
+
+  def testStore(self):
+    if not self.storeLoc:
+      #The storage location is blank, which indicates no recording to be done.
+      recStatus = {1:{'name':'All Cameras', 'status':'No recording configured'}}
+      putStatus(recStatus)
+      return False
+
+    if not self.storeLoc.rstrip('/'):
+      recStatus = {1:{'name':'All Cameras', 'status':'Error: Save location cannot be /'}}
+      putStatus(recStatus)
+      return False
+
+    if not os.access(self.storeLoc, os.R_OK):
+      recStatus = {1:{'name':'All Cameras', 'status':'Error: No read Access to  ' + self.storeLoc}}
+      putStatus(recStatus)
+      return False
+
+    if not os.access(self.storeLoc, os.W_OK):
+      recStatus = {1:{'name':'All Cameras', 'status':'Error: No write Access to  ' + self.storeLoc}}
+      putStatus(recStatus)
+      return False
+
+    return True
 
 
 #Utility functions.
@@ -164,10 +209,8 @@ def record_video(c):
     #Create the year/month/day folder if it doesn't exist.
     if not os.path.exists(thispath): os.makedirs(thispath)
 
-    #Count the number of files for this camera exist in this folder.
-    #c = [f for r, d, files in os.walk(thispath) for f in files if f.startswith(c['name'])].len() + 1
     #Set up the hour and minutes for the filename.
-    endStr = str(datetime.now().hour)+str(datetime.now().minute)
+    endStr = f"{datetime.now().hour:02}{datetime.now().minute:02}"
 
     filename = thispath+c['name']+"-"+endStr+c['extension'] #Note that we strip non-alphanumeric off the name
 
@@ -214,8 +257,8 @@ def generate_frames(rtsp_url):
     '-f', 'mjpeg',
     '-q:v', '2',
     '-r', '15',
-    '-'
-  ]
+    '-']
+
   process = subprocess.Popen(
     command,
     stdout=subprocess.PIPE,
@@ -243,6 +286,7 @@ def generate_frames(rtsp_url):
           break
   finally:
     process.terminate()
+
 
 
 def generate_image(rtsp_url):

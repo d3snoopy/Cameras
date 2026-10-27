@@ -2,7 +2,8 @@ from cameras.run.db import query_db, modify_db
 from cameras.cameras import app
 from flask import request
 from datetime import datetime, UTC
-import bcrypt
+import bcrypt, re
+from pathlib import Path
 
 def check_password(environ, user, password):
     with app.app_context():
@@ -54,10 +55,19 @@ def processForm(isAdmin, isConfig, username):
     status = ''
     if 'saveLoc' in request.form.keys() and isConfig:
       #We're updating the camera stuff.
-      modify_db('INSERT OR REPLACE INTO recSettings (rowid, saveLoc, saveTime, freeTarget, numCam, lastEdit) VALUES (?, ?, ?, ?, ?, ?)', (1, request.form['saveLoc'], request.form['saveTime'], request.form['freeTarget'], request.form['numCam'], int(datetime.now(UTC).timestamp())))
+      if Path(request.form['saveLoc']).is_absolute():
+        thisPath = str(Path(request.form['saveLoc']).resolve()) #Only accept absolute paths and resolve them.
+      else:
+        thisPath = ''
+
+      modify_db('INSERT OR REPLACE INTO recSettings (rowid, saveLoc, saveTime, freeTarget, numCam, lastEdit) VALUES (?, ?, ?, ?, ?, ?)', (1, thisPath, request.form['saveTime'], request.form['freeTarget'], request.form['numCam'], int(datetime.now(UTC).timestamp())))
 
       for i in range(1, int(request.form['numCam'])+1):
-        modify_db('INSERT OR REPLACE INTO camSettings (rowid, name, vidLink) VALUES (?, ?, ?)', (i, request.form['C-'+str(i)+'-name'], request.form['C-'+str(i)+'-vid']))
+        name = fixName(request.form['C-'+str(i)+'-name'])
+        modify_db('INSERT OR REPLACE INTO camSettings (rowid, name, vidLink) VALUES (?, ?, ?)', (i, name, request.form['C-'+str(i)+'-vid']))
+
+      #Cleanup Excess Cameras.
+      modify_db("DELETE FROM camSettings WHERE rowid > ?", (request.form['numCam'], ))
 
       status += "Updated Camera Settings, "
       return status
@@ -131,3 +141,7 @@ def createForm(isAdmin, isConfig, username):
       camData = None
 
     return userList, camConfig, camData
+
+
+def fixName(name):
+  return re.sub(r'\W+', '', name)
