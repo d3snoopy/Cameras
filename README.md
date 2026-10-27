@@ -16,6 +16,10 @@ Make sure that the following packages are installed on your RPi:
 - supervisor
 - ffmpeg
 
+```bash
+sudo apt-get install python3-bcrypt python3-flask python3-flask-login python3-opencv gunicorn nginx supervisor ffmpeg
+```
+
 Copy the contents of the src/ folder to your directory structure.
 
 Create the user "camuser":
